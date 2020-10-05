@@ -6,5 +6,6 @@
  */
 
 
-
+#include "include/lucs.h"
+#include "include/diag.h"
 

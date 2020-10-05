@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "include/lucs.h"
-#include "include/mem.h"
+#include "mem/inc/mem.h"
+#include "include/tokenizer.h"
 
  void lucs_dbg_print_tokens(const lucs_tok_t *tokens);
 int main(char *argc, char *argv){
@@ -25,7 +26,7 @@ int main(char *argc, char *argv){
 			"}";
 	lucs_tok_t lucs_tokens[1024];
 	lucs_tokenizer(code, lucs_tokens, 1024);
-	lucs_dbg_print_tokens(lucs_tokens);
+	//lucs_dbg_print_tokens(lucs_tokens);
 
 	mem_create(&mem, heap_buff, 256, 32);
 
