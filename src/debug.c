@@ -8,7 +8,7 @@
 #include "include/lucs.h"
 #include "include/debug.h"
 #include "include/tokenizer.h"
-
+#define LUCS_DBG_MODE 1
 #if LUCS_DBG_MODE
 static const char *tokens_str[] = {
 		/* General Tokens */
@@ -91,26 +91,46 @@ static const char *tokens_str[] = {
 		LUCS_TOKEN_NULL_DBG_STR,
 };
 
-void lucs_dbg_print_tokens(const lucs_tok_t *tokens)
+void lucs_dbg_print_tokens(const lucs_tok_t *tokens, lucs_tables_t *tables)
 {
 	const lucs_tok_t * cur_tok = tokens;
 	while(*cur_tok != LUCS_TOKEN_LAST)
 	{
 		if(*cur_tok == LUCS_TOKEN_ID_VARIABLE)
 		{
-			LUCS_DBG_PRINTF("[VAR] ");
+			uint8_t table_index = *(cur_tok+1);
+			LUCS_DBG_PRINTF("[VAR %i] ", table_index);
 			cur_tok+=2;
 			continue;
 		}
 		if(*cur_tok == LUCS_TOKEN_ID_FUNCTION)
 		{
-			LUCS_DBG_PRINTF("[FUNC] ");
+			uint8_t table_index = *(cur_tok+1);
+			if(tables->lucs_function_table[table_index].lucs_token_start != LUCS_TABLE_FUNC_START_NOT_SET)
+			{
+				LUCS_DBG_PRINTF("[FUNC %s Defined At %i] ", tables->lucs_function_table[table_index].identifier_text, tables->lucs_function_table[table_index].lucs_token_start);
+			}
+			else
+			{
+				LUCS_DBG_PRINTF("[FUNC %s Call] ", tables->lucs_function_table[table_index].identifier_text);
+			}
 			cur_tok+=2;
 			continue;
 		}
 		if(*cur_tok == LUCS_TOKEN_ID_CONST)
 		{
-			LUCS_DBG_PRINTF("[CONST] ");
+			uint8_t table_index = *(cur_tok+1);
+			if(tables->lucs_const_table[table_index].type == LUCS_CONST_STRING)
+			{
+				char temp[128];
+				memcpy(temp, tables->lucs_const_table[table_index].value.val_str.val_string, tables->lucs_const_table[table_index].value.val_str.len);
+				temp[tables->lucs_const_table[table_index].value.val_str.len] = 0;
+				LUCS_DBG_PRINTF("[CONST (%s) ] ", temp);
+			}
+			else
+			{
+				LUCS_DBG_PRINTF("[CONST (%f) ] ", tables->lucs_const_table[table_index].value.val_number_double);
+			}
 			cur_tok+=2;
 			continue;
 		}

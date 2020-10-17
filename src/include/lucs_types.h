@@ -21,8 +21,8 @@ typedef char *lucs_string_t;
 typedef const char *lucs_cstring_t;
 typedef unsigned char lucs_byte_t;
 typedef char	lucs_char_t;
-
-
+typedef unsigned int lucs_size_t;
+typedef unsigned int	lucs_bool_t;
 
 
 #endif /* SRC_INCLUDE_LUCS_TYPES_H_ */

@@ -7,11 +7,12 @@
 #include "include/lucs.h"
 #include "include/stack.h"
 
-static void lucs_stack_init(lucs_stack_t *stack_params)
+void lucs_stack_init(lucs_stack_t *stack_params)
 {
 	stack_params->index = 0;
 }
-static void lucs_stack_push(lucs_stack_t *stack, void *data_ptr)
+
+void lucs_stack_push(lucs_stack_t *stack, void *data_ptr)
 {
 	if((stack->index + stack->elem_size) <= stack->length)
 	{
@@ -33,7 +34,7 @@ static void lucs_stack_push(lucs_stack_t *stack, void *data_ptr)
 	}// TODO-else raise an overflow error
 
 }
-static void *lucs_stack_pop(lucs_stack_t *stack)
+void *lucs_stack_pop(lucs_stack_t *stack)
 {
 	if((stack->index - stack->elem_size) >= 0)
 	{

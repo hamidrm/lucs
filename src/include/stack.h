@@ -21,4 +21,8 @@ typedef struct
 	size_t length;
 }lucs_stack_t;
 
+void lucs_stack_push(lucs_stack_t *stack, void *data_ptr);
+void *lucs_stack_pop(lucs_stack_t *stack);
+void lucs_stack_init(lucs_stack_t *stack_params);
+
 #endif /* SRC_INCLUDE_STACK_H_ */

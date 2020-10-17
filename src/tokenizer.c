@@ -11,10 +11,12 @@
 
 static const lucs_keywords_token_t lucs_keyword_list[] = LUCS_KEYWORDS_LIST;
 
-void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
+void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length, lucs_tables_t *tables)
 {
 #define PUSH_TOKEN(x)	lucs_stack_push(&lucs_stack, x)
 #define POP_TOKEN()	((lucs_tok_t *)lucs_stack_pop(&lucs_stack))
+	lucs_ui4_t lucs_level = 0;
+	lucs_ui4_t lucs_block_num = 0;
 	lucs_stack_t	lucs_stack;
 	lucs_tokens_t	prev_token = LUCS_UNDEFINED_TOKEN;
 	lucs_tokenizer_state_t lucs_tokenizer_state;
@@ -58,6 +60,8 @@ void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
 				{
 					// End Of String
 					//Add it to string table (string_start_point, string_length)
+					lucs_tok_t table_index =lucs_constant_table_add(tables, string_start_point, string_length, LUCS_CONST_STRING);
+					PUSH_TOKEN(&table_index);
 					lucs_tokenizer_state = LUCS_TOKENIZER_STATE_CODE;
 				}
 				else
@@ -69,6 +73,8 @@ void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
 				{
 					// End Of String
 					//Add it to string table.(string_start_point, string_length)
+					lucs_tok_t table_index = lucs_constant_table_add(tables, string_start_point, string_length, LUCS_CONST_STRING);
+					PUSH_TOKEN(&table_index);
 					lucs_tokenizer_state = LUCS_TOKENIZER_STATE_CODE;
 				}
 				else
@@ -103,13 +109,13 @@ void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
 		case LUCS_TOKEN_QUOTATION_STR:
 			lucs_tokenizer_state = LUCS_TOKENIZER_STATE_STRING1;
 			lucs_token = LUCS_TOKEN_ID_CONST;
-			string_start_point = input;
+			string_start_point = input+1;
 			string_length = 0;
 			break;
 		case LUCS_TOKEN_DQUOTATION_STR:
 			lucs_tokenizer_state = LUCS_TOKENIZER_STATE_STRING2;
 			lucs_token = LUCS_TOKEN_ID_CONST;
-			string_start_point = input;
+			string_start_point = input+1;
 			string_length = 0;
 			break;
 		case LUCS_TOKEN_CR_STR:
@@ -137,9 +143,12 @@ void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
 			break;
 		case LUCS_TOKEN_BRACES_OPEN_STR:
 			lucs_token = LUCS_TOKEN_BRACES_OPEN;
+			lucs_level++;
 			break;
 		case LUCS_TOKEN_BRACES_CLOSE_STR:
 			lucs_token = LUCS_TOKEN_BRACES_CLOSE;
+			lucs_level--;
+			lucs_block_num++;
 			break;
 		case LUCS_TOKEN_OP_ASSIGN_STR:
 			switch (prev_token)
@@ -307,20 +316,19 @@ void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
 		}
 		else
 		{
-			if ((lucs_token != LUCS_UNDEFINED_TOKEN || 	lucs_token == LUCS_TOKEN_BLANK1)
+			if ((lucs_token != LUCS_UNDEFINED_TOKEN || lucs_token == LUCS_TOKEN_BLANK1)
 					&& lucs_identifier.identifier_started == 1)
 			{
 				lucs_tok_t last_token = lucs_token;
 				lucs_tidx_t identifier_index;
 				// Identifier completed! put a null character  as terminate character into the identifier array and start to find out what was that identifier.
 				lucs_identifier.identifier_text[lucs_identifier.index] = 0;
-
+				lucs_identifier.length = lucs_identifier.index;
 				if (LUCS_IS_DIGIT(lucs_identifier.identifier_text[0])
 						|| (lucs_identifier.identifier_text[0] == '.')) {
 					// It's a constant number.
-					//TODO-Validate number
+					identifier_index= lucs_constant_table_add(tables, (char *)(input - lucs_identifier.length), lucs_identifier.length, LUCS_CONST_NUMBER);
 					lucs_token = LUCS_TOKEN_ID_CONST;
-					identifier_index = 0;
 				} else {
 					/* It's a keyword or variable or function name */
 
@@ -340,13 +348,11 @@ void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length)
 						if (lucs_identifier.prev_token == LUCS_TOKEN_FUNCTION
 								|| lucs_token == LUCS_TOKEN_PAREN_OPEN) {
 							lucs_token = LUCS_TOKEN_ID_FUNCTION;
-							identifier_index = 0;
-							//TODO-It's a function. Add it to functions table.
+							identifier_index = lucs_function_table_add(tables, lucs_identifier.identifier_text, lucs_stack.index, lucs_identifier.prev_token == LUCS_TOKEN_FUNCTION ? 1 : 0);
 						} else {
 							//OK! It's a variable.
 							lucs_token = LUCS_TOKEN_ID_VARIABLE;
-							identifier_index = 0;
-							//TODO-It's a variable. Add it to variables table.
+							identifier_index =  lucs_variable_table_add(tables, lucs_identifier.identifier_text, lucs_level, lucs_block_num);
 						}
 					}
 				}

@@ -304,4 +304,6 @@ typedef struct
 	const char *keyword_str;
 }lucs_keywords_token_t;
 
+void lucs_tokenizer(const char *input, lucs_tok_t *tokens, size_t max_length, lucs_tables_t *tables);
+
 #endif /* TOKENIZER_H_ */

@@ -8,19 +8,18 @@
 #ifndef SRC_INCLUDE_TABLES_H_
 #define SRC_INCLUDE_TABLES_H_
 
+#define	LUCS_TABLE_FUNC_START_NOT_SET	(0)
 typedef struct lucs_json_t  lucs_json_var_t;
 
-
 typedef enum {
-	LUCS_VAR_TYPE_STRING,
-	LUCS_VAR_TYPE_FLOAT,
-	LUCS_VAR_TYPE_INTEGER,
-	LUCS_VAR_TYPE_JSON,
-}lucs_var_t;
+	LUCS_TABLE_STATUS_ERROR = (-1),
+	LUCS_TABLE_STATUS_ERROR_REDEFINITION = (-2),
+}lucs_table_status_t;
 
 typedef enum {
 	LUCS_CONST_STRING,
 	LUCS_CONST_NUMBER,
+	LUCS_CONST_UNDEF,
 }lucs_const_t;
 
 typedef enum {
@@ -28,26 +27,11 @@ typedef enum {
 	LUCS_FUNC_C_LANG,
 }lucs_func_t;
 
-typedef enum {
-	LUCS_VAR_FLAG_ARRAY = (1<<0),
-	LUCS_VAR_FLAG_CONST = (1<<1),
-	LUCS_VAR_FLAG_JSON = (1<<2),
-	LUCS_VAR_FLAG_LIV = (1<<3),
-}lucs_var_flags_t;
-
-
 typedef struct
 {
-	uint8_t	flags;
-	lucs_var_t	type;
 	char identifier_text[LUCS_MAX_IDENTIFIER_LEGTH];
-	union
-	{
-		const char * val_string;
-		int32_t		 val_integer;
-		float	val_float;
-//		lucs_json_var_t lucs_json;
-	}value;
+	lucs_ui4_t	level;
+	lucs_ui4_t	block_num;
 }lucs_variable_rec_t;
 
 typedef struct
@@ -56,25 +40,18 @@ typedef struct
 	union
 	{
 		double	val_number_double;
-		long	val_number_integer;
-		const char *val_string;
+		struct
+		{
+			const char *val_string;
+			lucs_size_t len;
+		}val_str;
 	}value;
 }lucs_constant_rec_t;
 
 typedef struct
 {
-	lucs_func_t	type;
 	char identifier_text[LUCS_MAX_IDENTIFIER_LEGTH];
-	union
-	{
-		uint32_t c_func_ptr;
-		uint32_t lucs_token;
-	}start_address;
-	union
-	{
-		uint32_t c_func_ptr;
-		uint32_t lucs_token;
-	}end_address;
+	uint32_t lucs_token_start;
 }lucs_function_rec_t;
 
 struct lucs_json_t
@@ -90,7 +67,28 @@ struct lucs_json_t
 
 typedef struct
 {
-	lucs_tok_t  	token;
-	lucs_tidx_t	table_index;
-}lucs_id_token_t;
+	lucs_function_rec_t lucs_function_table[LUCS_TABLE_FUNC_SIZE];
+	lucs_variable_rec_t lucs_variable_table[LUCS_TABLE_VAR_SIZE];
+	lucs_constant_rec_t lucs_const_table[LUCS_TABLE_CONST_SIZE];
+	//lucs_json_rec_t lucs_json_table[LUCS_TABLE_JSON_SIZE];
+
+	lucs_ui4_t	lucs_function_table_index;
+	lucs_ui4_t	lucs_variable_table_index;
+	lucs_ui4_t	lucs_const_table_index;
+}lucs_tables_t;
+
+//typedef struct
+//{
+//	lucs_tok_t  	token;
+//	lucs_tidx_t	table_index;
+//}lucs_id_token_t;
+
+
+
+
+
+void lucs_tables_init(lucs_tables_t	*tables);
+lucs_i4_t lucs_constant_table_add(lucs_tables_t	*tables, lucs_ptr_t constant_value, lucs_size_t len, lucs_const_t type);
+lucs_i4_t lucs_function_table_add(lucs_tables_t	*tables, lucs_cstring_t func_name, lucs_ui4_t token_index, lucs_bool_t	is_definition);
+lucs_i4_t lucs_variable_table_add(lucs_tables_t	*tables, lucs_cstring_t var_name, lucs_ui4_t level, lucs_ui4_t block_num);
 #endif /* SRC_INCLUDE_TABLES_H_ */
